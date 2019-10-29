@@ -1,7 +1,6 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { Link } from 'react-router-dom';
-import { FaSpinner } from 'react-icons/fa';
 
 import Select from 'react-select';
 import api from '../../services/api';
@@ -70,37 +69,10 @@ export default class Repository extends Component {
     });
   };
 
-  handleNextPage = async e => {
-    e.preventDefault();
+  handlePageChange = async action => {
     const { page } = this.state;
-    const newPage = page + 1;
+    const newPage = action === 'back' ? page - 1 : page + 1;
     const { repository, state } = this.state;
-
-    this.setState({
-      searching: true,
-    });
-
-    const response = await api.get(`/repos/${repository.full_name}/issues`, {
-      params: {
-        state,
-        page: newPage,
-        per_page: 5,
-      },
-    });
-
-    this.setState({
-      issues: response.data,
-      page: newPage,
-      searching: false,
-    });
-  };
-
-  handlePreviousPage = async e => {
-    e.preventDefault();
-
-    const { page } = this.state;
-    const { repository, state } = this.state;
-    const newPage = page - 1;
 
     this.setState({
       searching: true,
@@ -170,8 +142,8 @@ export default class Repository extends Component {
         <Buttons>
           <SubmitButton
             loading={searching}
-            disabled={page === 1}
-            onClick={this.handlePreviousPage}
+            disabled={page < 2}
+            onClick={() => this.handlePageChange('back')}
           >
             Previous Page
           </SubmitButton>
@@ -179,7 +151,7 @@ export default class Repository extends Component {
           <SubmitButton
             loading={searching}
             disabled={issues.length === 0}
-            onClick={this.handleNextPage}
+            onClick={() => this.handlePageChange('next')}
           >
             Next Page
           </SubmitButton>
