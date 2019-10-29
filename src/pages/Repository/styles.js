@@ -1,4 +1,4 @@
-import styled from 'styled-components';
+import styled, { keyframes, css } from 'styled-components';
 
 export const Loading = styled.div`
   color: #fff;
@@ -40,6 +40,66 @@ export const Owner = styled.div`
     text-align: center;
     max-width: 400px;
   }
+`;
+
+export const Form = styled.form`
+  margin-top: 30px;
+  display: flex;
+  flex: 1;
+  justify-content: center;
+
+  div {
+    flex: 1;
+  }
+`;
+
+export const Buttons = styled.div`
+  margin-top: 30px;
+  display: flex;
+  flex: 1;
+  justify-content: space-between;
+  align-items: center;
+`;
+
+const rotate = keyframes`
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+`;
+
+export const SubmitButton = styled.button.attrs(props => ({
+  type: 'submit',
+  disabled: props.disabled,
+  searching: props.loading,
+}))`
+  height: 30px;
+  width: 100px;
+  font-size: 12px;
+  background: #7159c1;
+  color: #fff;
+  border-radius: 6px;
+
+  &[disabled] {
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+
+  &[searching] {
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+
+  ${props =>
+    props.loading &&
+    css`
+      svg {
+        animation: ${rotate} 2s linear infinite;
+      }
+    `}
 `;
 
 export const IssueList = styled.ul`

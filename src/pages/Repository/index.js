@@ -1,10 +1,13 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { Link } from 'react-router-dom';
+import { FaSpinner } from 'react-icons/fa';
+
+import Select from 'react-select';
 import api from '../../services/api';
 import Container from '../../components/Container';
 
-import { Loading, Owner, IssueList } from './styles';
+import { Loading, Owner, IssueList, Buttons, SubmitButton } from './styles';
 
 export default class Repository extends Component {
   static propTypes = {
@@ -19,6 +22,9 @@ export default class Repository extends Component {
     repository: {},
     issues: [],
     loading: true,
+    searching: false,
+    state: 'all',
+    page: 1,
   };
 
   async componentDidMount() {
@@ -30,7 +36,7 @@ export default class Repository extends Component {
       api.get(`/repos/${repoName}`),
       api.get(`/repos/${repoName}/issues`, {
         params: {
-          state: 'open',
+          state: 'all',
           per_page: 5,
         },
       }),
@@ -43,21 +49,106 @@ export default class Repository extends Component {
     });
   }
 
+  handleFilterChange = async e => {
+    this.setState({
+      state: e.value,
+      searching: true,
+    });
+
+    const { repository, state } = this.state;
+
+    const response = await api.get(`/repos/${repository.full_name}/issues`, {
+      params: {
+        state,
+        per_page: 5,
+      },
+    });
+
+    this.setState({
+      issues: response.data,
+      searching: false,
+    });
+  };
+
+  handleNextPage = async e => {
+    e.preventDefault();
+    const { page } = this.state;
+    const newPage = page + 1;
+    const { repository, state } = this.state;
+
+    this.setState({
+      searching: true,
+    });
+
+    const response = await api.get(`/repos/${repository.full_name}/issues`, {
+      params: {
+        state,
+        page: newPage,
+        per_page: 5,
+      },
+    });
+
+    this.setState({
+      issues: response.data,
+      page: newPage,
+      searching: false,
+    });
+  };
+
+  handlePreviousPage = async e => {
+    e.preventDefault();
+
+    const { page } = this.state;
+    const { repository, state } = this.state;
+    const newPage = page - 1;
+
+    this.setState({
+      searching: true,
+    });
+
+    const response = await api.get(`/repos/${repository.full_name}/issues`, {
+      params: {
+        state,
+        page: newPage,
+        per_page: 5,
+      },
+    });
+
+    this.setState({
+      issues: response.data,
+      page: newPage,
+      searching: false,
+    });
+  };
+
   render() {
-    const { repository, issues, loading } = this.state;
+    const { repository, issues, loading, searching, page } = this.state;
+
+    const options = [
+      { value: 'all', label: 'All issues' },
+      { value: 'open', label: 'Open issues' },
+      { value: 'closed', label: 'Closed issues' },
+    ];
+    const defaultOption = options[0];
 
     if (loading) {
-      return <Loading>Carregando</Loading>;
+      return <Loading>Loading</Loading>;
     }
 
     return (
       <Container>
         <Owner>
-          <Link to="/">Voltar aos repositórios</Link>
+          <Link to="/">Back to repository list</Link>
           <img src={repository.owner.avatar_url} alt={repository.owner.login} />
           <h1>{repository.name}</h1>
           <p>{repository.description}</p>
         </Owner>
+
+        <Select
+          options={options}
+          defaultValue={defaultOption}
+          onChange={this.handleFilterChange}
+        />
 
         <IssueList>
           {issues.map(issue => (
@@ -75,6 +166,24 @@ export default class Repository extends Component {
             </li>
           ))}
         </IssueList>
+
+        <Buttons>
+          <SubmitButton
+            loading={searching}
+            disabled={page === 1}
+            onClick={this.handlePreviousPage}
+          >
+            Previous Page
+          </SubmitButton>
+          <strong>Page {page}</strong>
+          <SubmitButton
+            loading={searching}
+            disabled={issues.length === 0}
+            onClick={this.handleNextPage}
+          >
+            Next Page
+          </SubmitButton>
+        </Buttons>
       </Container>
     );
   }
